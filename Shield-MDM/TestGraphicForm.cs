@@ -4,11 +4,13 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 using Button = System.Windows.Forms.Button;
 
 namespace Shield_MDM
@@ -51,7 +53,7 @@ namespace Shield_MDM
             g.FillRectangle(rectBrush, rect);
             g.DrawRectangle(rectPen, rect);
         }
-
+        
         // Отрисовка зоны защиты
         private void DrawZoneRect(Graphics g, int scale, PointF startPoint, int zoneSizeX, int zoneSizeY)
         {
@@ -156,20 +158,6 @@ namespace Shield_MDM
             }
         }
 
-        public void CreateButton(int x, int y, string text)
-        {
-            Button btn = new Button();
-            btn.Text = text;
-            btn.Size = new Size(Convert.ToInt32(ScaleBox.Text), Convert.ToInt32(ScaleBox.Text));
-            btn.Location = new Point(x, y);
-            //btn.Click += evh;
-            btn.BackColor = Color.FromArgb(75, 76, 78);
-            btn.ForeColor = Color.FromArgb(255, 255, 255);
-            btn.Font = new Font("Century Gothic", 6, FontStyle.Regular);
-
-            this.Controls.Add(btn);
-        }
-
         private void DrawSingleGl(Graphics g, int squareScale, PointF startPoint)
         {
             Rectangle rect = new Rectangle((int)startPoint.X * squareScale, (int)startPoint.Y * squareScale, squareScale, squareScale);
@@ -201,6 +189,23 @@ namespace Shield_MDM
             g.DrawLines(AxisPen, pointAxeY);
         }
 
+        private void DrawDefZoneGraphic(int xx, int y, Graphics g)
+        {
+            for (int x = 0; x < defZone.DefCells.Count; x++)
+            {
+                PointF gl = new PointF(xx, y);
+                PointF bs = new PointF(Convert.ToInt32(BsX.Text), Convert.ToInt32(BsY.Text));
+
+                double rangeKbS = Math.Sqrt(Math.Pow((defZone.DefCells[x].Coordinates.X) - bs.X, 2) + Math.Pow(defZone.DefCells[x].Coordinates.Y - bs.Y, 2));
+                double rangeKgL = Math.Sqrt(Math.Pow((defZone.DefCells[x].Coordinates.X) - gl.X, 2) + Math.Pow(defZone.DefCells[x].Coordinates.Y - gl.Y, 2));
+
+                if (rangeKbS <= rangeKgL * 0.55d)
+                {
+                    DrawSingleZoneFill(g, Convert.ToInt32(ScaleBox.Text), defZone.DefCells[x].Coordinates);
+                }
+            }
+        }
+        
         private void button1_Click(object sender, EventArgs e)
         {
             int scale = Convert.ToInt32(ScaleBox.Text);
@@ -209,59 +214,37 @@ namespace Shield_MDM
             int size_y = Convert.ToInt32(WrkYBox.Text);
 
             PointF zonePoint = new PointF(Convert.ToInt32(DefStartPtX.Text), Convert.ToInt32(DefStartPtY.Text));
-
             Graphics g = GraphicZone.CreateGraphics();
             g.ScaleTransform(1.0f, -1.0f);
             g.TranslateTransform(0.0f, -1.0f * GraphicZone.Height);
 
             g.Clear(GraphicZone.BackColor);
 
-            
-            //CreateButton(0, 25, "asd");
-            //for(int i = 0; i < Convert.ToInt32(WrkXBox.Text); i++)
-            //{
-            //    CreateButton(i+25, i+25, "asd");
-            //}
-
             DrawWorkSpace(g, scale, size_x, size_y);
 
             DrawZoneRect(g, scale, zonePoint, Convert.ToInt32(DefXBox.Text), Convert.ToInt32(DefYBox.Text));
 
             DrawSingleSquare(g, scale, new PointF(Convert.ToInt32(BsX.Text), Convert.ToInt32(BsY.Text)));
+            
+            RaschetForGl();
 
-            DrawSingleGl(g, scale, new PointF(Convert.ToInt32(GlPosBoxX.Text), Convert.ToInt32(GlPosBoxY.Text)));
-
+            Raschet R = new Raschet(scale, Convert.ToInt32(WrkXBox.Text), matrixStates);
+            if(R.ShowDialog() == DialogResult.OK)
+            {
+                DrawSingleGl(g, scale, new PointF(R.ButX-1, R.ButY-1));
+                DrawDefZoneGraphic(R.ButX, R.ButY, g);
+                R.Close();
+            }
             DrawAxis(g);
 
-            DrawAngle(g, scale, new PointF(6, 6), 2, 2);
-
-            raschet(Convert.ToInt32(ScaleBox.Text), g);
-
-            
             g.Dispose();
-            
-            GraphicZone.Visible = false;
 
-            int offset = Convert.ToInt32(ScaleBox.Text);
-            for (int i = Convert.ToInt32(WrkXBox.Text); i > 0; i--)
-            {
-                for (int j = Convert.ToInt32(WrkXBox.Text); j > 0; j--)
-                {
-                    foreach(var item in matrixStates)
-                    {
-                        if(item.coordinate.X == i && item.coordinate.Y == j)
-                        {
-                            CreateButton(GraphicZone.Location.X + i * offset, GraphicZone.Location.Y + j * offset, item.State.ToString());
-                        }
-                    }
-                    
-                }
-            }
+            GraphicZone.Visible = true;
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            ScaleBox.Text = 10.ToString();
+            ScaleBox.Text = 20.ToString();
             WrkXBox.Text = 10.ToString();
             WrkYBox.Text = 10.ToString();
             DefXBox.Text = 4.ToString();
@@ -274,6 +257,8 @@ namespace Shield_MDM
             GlPosBoxY.Text = 6.ToString();
         }
 
+        public int ButtonCount { get; set; }
+
         public class MatrixStates
         {
             public int State;
@@ -281,34 +266,50 @@ namespace Shield_MDM
         }
 
         public List<MatrixStates> matrixStates = new List<MatrixStates>();
+
         
 
-
-        private void raschet(int scale, Graphics g)
+        private void DisposeButtons()
         {
-            int count = 0;
-            for (int i = 0; i < defZone.DefCells.Count; i++)
+            for(int i = 0; i < Convert.ToInt32(WrkXBox.Text); i++)
             {
-                // базовая станция
-                PointF bs = new PointF(Convert.ToInt32(BsX.Text), Convert.ToInt32(BsY.Text));
-                // глушилка
-                PointF gl = new PointF(Convert.ToInt32(GlPosBoxX.Text), Convert.ToInt32(GlPosBoxY.Text));
-
-                double rangeKbS = Math.Sqrt(Math.Pow((defZone.DefCells[i].Coordinates.X) - bs.X, 2) + Math.Pow(defZone.DefCells[i].Coordinates.Y - bs.Y, 2));
-                double rangeKgL = Math.Sqrt(Math.Pow((defZone.DefCells[i].Coordinates.X) - gl.X, 2) + Math.Pow(defZone.DefCells[i].Coordinates.Y - gl.Y, 2));
-                
-                if(rangeKbS <= rangeKgL * 0.55d) 
+                for (int j = Convert.ToInt32(WrkXBox.Text); j > 0; j--)
                 {
-                    DrawSingleZoneFill(g, Convert.ToInt32(ScaleBox.Text), defZone.DefCells[i].Coordinates);
-                    count++;
+                    Controls.RemoveByKey($"btn-{i}-{j}");
                 }
             }
-            MatrixStates MS = new MatrixStates()
+        }
+
+        private void RaschetForGl()
+        {
+            for (int i = Convert.ToInt32(WrkXBox.Text); i > 0; i--)
             {
-                State = count,
-                coordinate = new PointF(Convert.ToInt32(GlPosBoxX.Text), Convert.ToInt32(GlPosBoxY.Text))
-            };
-            matrixStates.Add(MS);
+                for (int j = Convert.ToInt32(WrkXBox.Text); j > 0; j--)
+                {
+                    if(!defZone.DefCells.Contains(new MapGridCell(i,j)))
+                    {
+                        int count = 0;
+                        for(int x = 0; x < defZone.DefCells.Count; x++)
+                        {
+                            PointF gl = new PointF(i, j);
+                            PointF bs = new PointF(Convert.ToInt32(BsX.Text), Convert.ToInt32(BsY.Text));
+
+                            double rangeKbS = Math.Sqrt(Math.Pow((defZone.DefCells[x].Coordinates.X) - bs.X, 2) + Math.Pow(defZone.DefCells[x].Coordinates.Y - bs.Y, 2));
+                            double rangeKgL = Math.Sqrt(Math.Pow((defZone.DefCells[x].Coordinates.X) - gl.X, 2) + Math.Pow(defZone.DefCells[x].Coordinates.Y - gl.Y, 2));
+
+                            if (rangeKbS <= rangeKgL * 0.55d)
+                            {
+                                count++;
+                                //DrawSingleZoneFill(g, Convert.ToInt32(ScaleBox.Text), defZone.DefCells[i].Coordinates);
+                            }
+                        }
+                        MatrixStates MS = new MatrixStates();
+                        MS.State = count;
+                        MS.coordinate = new PointF(i, j);
+                        matrixStates.Add(MS);
+                    }
+                }
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)

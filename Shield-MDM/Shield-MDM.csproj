@@ -63,6 +63,12 @@
       <DependentUpon>MapForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MapGridCell.cs" />
+    <Compile Include="Raschet.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Raschet.Designer.cs">
+      <DependentUpon>Raschet.cs</DependentUpon>
+    </Compile>
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -83,6 +89,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MapForm.resx">
       <DependentUpon>MapForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Raschet.resx">
+      <DependentUpon>Raschet.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
