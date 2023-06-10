@@ -47,11 +47,11 @@ namespace Shield_MDM
                     {
                         if (item.coordinate.X == i && item.coordinate.Y == j)
                         {
-                            CreateButton(temp_i * offset, j * offset, /*item.State.ToString()*/ $"{i},{j}", $"btn-{i}-{j}");
-                            temp_i++;
+                            CreateButton(i * offset, j * offset, /*item.State.ToString()*/ $"{i},{j}", $"btn-{i}-{j}");
+                            //temp_i++;
                         }
                     }
-                    temp_i = 0;
+                    //temp_i = 0;
                 }
                 
             }
@@ -61,13 +61,13 @@ namespace Shield_MDM
         {
             Button btn = new Button();
             btn.Text = text;
-            btn.Size = new Size(scale*2, scale*2);
+            btn.Size = new Size(scale, scale);
             btn.Location = new Point(x, y);
             //btn.Click += evh;
             btn.Name = name;
             btn.BackColor = Color.FromArgb(75, 76, 78);
             btn.ForeColor = Color.FromArgb(255, 255, 255);
-            btn.Font = new Font("Century Gothic", 6, FontStyle.Regular);
+            btn.Font = new Font("Century Gothic", 4, FontStyle.Regular);
             btn.Click += new EventHandler(BtnFuncClick);
             this.Controls.Add(btn);
         }
