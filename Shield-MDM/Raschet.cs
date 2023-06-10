@@ -41,15 +41,11 @@ namespace Shield_MDM
             //int temp_j = 0;
             for (int j = wrkX; j >= 0; j--)
             {
-                for (int i = wrkX; i >= 0; i--)
+                for (int i = 1; i <= wrkX; i++)
                 {
-                    foreach (var item in matrixStates)
+                    if (matrixStates.Any(x => x.coordinate.X == i && x.coordinate.Y == j))
                     {
-                        if (item.coordinate.X == i && item.coordinate.Y == j)
-                        {
-                            CreateButton(i * offset, j * offset, /*item.State.ToString()*/ $"{i},{j}", $"btn-{i}-{j}");
-                            //temp_i++;
-                        }
+                        CreateButton(i * offset, j * offset, /*item.State.ToString()*/ $"{i},{j}", $"btn-{i}-{j}");
                     }
                     //temp_i = 0;
                 }
